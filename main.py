@@ -13,6 +13,7 @@ TO DO
 intents = discord.Intents.default()
 intents.reactions = True
 intents.members = True
+intents.message_content = True
 
 client = commands.Bot(command_prefix = '!', intents = intents)
 
@@ -96,32 +97,90 @@ async def on_raw_reaction_remove(payload):
 @client.command()
 async def role(ctx, *args):
     
-    """
+    help_str = """
     Commande qui permet de générer un message de reaction role (les membres peuvent s'auto ajouter/enlever des rôles avec les réactions sous le message)
     Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role.
 
     Fonctionne comme suit :
-    !role <emote1> <role1> <emote2> <role2> ...
+    !role <option1> <option2> ... <emote1> <role1> <emote2> <role2> ...
+
+    OPTIONS :
+    -h --help : manuel
+    -m --message 'str' : Personnalise le message envoyé par le bot. Le message doit être entouré de quote < ' >
+    -u --unique : Les membres peuvent avoir uniquement 1 rôle de la liste
     """
     # Check des permissions
     if ctx.message.author.id != OWNER_ID:
         return
 
+    # Default values
+    message_str = "Réagissez avec le(s) emoji(s) suivant(s) pour avoir le(s) rôle(s) correspondant : "  # Default message
+    UF = 0                                                                                              # Unique Flag
 
-    # Envoie le message
-    message = await ctx.send('Réagissez avec le(s) emoji(s) suivant(s) pour avoir le(s) rôle(s) correspondant : ')
+    start = 0
+
+    while args[start].startswith("-"):
+        match args[start]:
+            case "-h" |"--help":
+                await ctx.send(help_str)
+                return
+
+            case "-u" | "--unique": 
+                UF = 1
+
+            case "-m" |"--message":
+                try :
+                    if args[start+1].startswith('"') or args[start+1].startswith("'"):
+                        start += 1
+                        message_str = args[start]
+                        if not(args[start].endswith('"') or args[start].endswith("'")):
+                            while(not(args[start].endswith('"') or args[start].endswith("'"))):
+                                message_str = message_str + " " + args[start+1]
+                                start += 1
+                        message_str = message_str[1:-1]
+                    else :
+                        await ctx.send("ERREUR : il manque sûrement un début de quote ( ' ) pour l'option -m")
+                        return
+                except IndexError: await ctx.send("ERREUR : il manque sûrement une fin de quote ( ' ) pour l'option -m")
+                
+            case _ : print("Unknown")
+        start += 1
+
+    # Analyse les arguments
+    message = await ctx.send(message_str)
 
     # Stock l'id du message envoyé 
     new_dict = {}
     new_dict |= {"id" : message.id}
+    new_dict |= {"UF" : UF}
     list_id_messages_reaction_role.append(message.id)
     
 
-    # Ajoute chaque paire emoji-rôle
-    for i in range(0, len(args), 2):
+    # Ajoute chaque paire réaction-rôle
+    for i in range(start, len(args), 2):
         emoji = args[i]
-        await message.add_reaction(emoji)
-        role_name = args[i + 1]
+
+        # Ajout de la réaction
+        try : 
+            await message.add_reaction(emoji)
+        except Exception : 
+            await ctx.send(f"""ERREUR : "{emoji}" n'est pas un emoji existant""")
+            await message.delete()
+            return
+        
+        # Ajout du rôle
+        try : role_name = args[i + 1]
+        except IndexError:
+            await ctx.send(f"""ERREUR : Missing one last argument""")
+            await message.delete()
+            return
+
+        if discord.utils.get(ctx.guild.roles, name=role_name) == None:
+            await ctx.send(f"""ERREUR : "{role_name}" n'existe pas""")
+            await message.delete()
+            return
+
+        # Ajout de la paire dans le dictionnaire 
         new_dict |= {str(unicodedata.normalize('NFKD', emoji).encode('ascii', 'ignore')):role_name}
     
     # Mise à jour du json
