@@ -98,19 +98,22 @@ async def on_raw_reaction_remove(payload):
 async def role(ctx, *args):
     
     help_str = """
-    Commande qui permet de générer un message de reaction role (les membres peuvent s'auto ajouter/enlever des rôles avec les réactions sous le message)
-    Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role.
+__**ROLE**__
 
-    Fonctionne comme suit :
+Commande qui permet de générer un message de reaction role (les membres peuvent s'auto ajouter/enlever des rôles avec les réactions sous le message).
+Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role comme argument.
+
+**UTILISATION**
     !role <option1> <option2> ... <emote1> <role1> <emote2> <role2> ...
 
-    OPTIONS :
+**OPTIONS**
     -h --help : manuel
     -m --message 'str' : Personnalise le message envoyé par le bot. Le message doit être entouré de quote < ' >
     -u --unique : Les membres peuvent avoir uniquement 1 rôle de la liste
     """
     # Check des permissions
     if ctx.message.author.id != OWNER_ID:
+        await ctx.send("Désolé, vous n'êtes pas autorisé à utiliser cette commande")
         return
 
     # Default values
