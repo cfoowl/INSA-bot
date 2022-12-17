@@ -7,17 +7,14 @@ import json
 
 """
 TO DO
-- owner only
-- one role only"""
+- one role only
+- message personnalisé"""
 
 intents = discord.Intents.default()
 intents.reactions = True
 intents.members = True
 
 client = commands.Bot(command_prefix = '!', intents = intents)
-
-
-OWNER_ID = 269857981695393793
 
 # Récupère la liste des messages d'attribution de rôle
 with open('message_role.json') as json_file:
@@ -98,7 +95,19 @@ async def on_raw_reaction_remove(payload):
 
 @client.command()
 async def role(ctx, *args):
-        
+    
+    """
+    Commande qui permet de générer un message de reaction role (les membres peuvent s'auto ajouter/enlever des rôles avec les réactions sous le message)
+    Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role.
+
+    Fonctionne comme suit :
+    !role <emote1> <role1> <emote2> <role2> ...
+    """
+    # Check des permissions
+    if ctx.message.author.id != OWNER_ID:
+        return
+
+
     # Envoie le message
     message = await ctx.send('Réagissez avec le(s) emoji(s) suivant(s) pour avoir le(s) rôle(s) correspondant : ')
 
@@ -124,4 +133,5 @@ async def role(ctx, *args):
 
 # setup(bot)
 load_dotenv(dotenv_path="config")
+OWNER_ID = int(os.getenv("OWNER_ID"))
 client.run(os.getenv("TOKEN"))
