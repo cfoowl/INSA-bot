@@ -52,6 +52,14 @@ async def on_raw_reaction_add(payload):
     # Récupère le dictionnaire qui correspond au message
     for i in list_messages_reaction_role:
         if payload.message_id == i["id"]:
+
+            # Si UF = 1, alors on vérifie que l'utilisateur n'a pas déjà un des rôles de la liste
+            if i["UF"] == 1:
+                for v in i.values():
+                    if discord.utils.get(payload.member.roles, name=v) != None:
+                        print(f"{payload.member} already has the role {v}")
+                        return
+            
             # Récupère le nom du rôle correspond à la réaction
             role_name = i.get(str(unicodedata.normalize('NFKD', payload.emoji.name).encode('ascii', 'ignore')))
             if role_name == None:
@@ -71,7 +79,7 @@ async def on_raw_reaction_remove(payload):
     Ecoute les réactions arrivant sur les messages présents dans la liste
     Enlève le rôle correspondant à la reaction enlevée par l'utilisateur
     """
-
+    
     # ID du message présent ou non dans la liste
     if payload.message_id not in list_id_messages_reaction_role:
         return
@@ -79,6 +87,11 @@ async def on_raw_reaction_remove(payload):
     # Récupère le dictionnaire qui correspond au message
     for i in list_messages_reaction_role:
         if payload.message_id == i["id"]:
+            
+            # Si le Remove Flag = 0, alors on n'enlève pas le rôle
+            if i["RF"] == 0:
+                return
+
             # Récupère le nom du rôle correspond à la réaction
             role_name = i.get(str(unicodedata.normalize('NFKD', payload.emoji.name).encode('ascii', 'ignore')))
             if role_name == None:
@@ -97,41 +110,45 @@ async def on_raw_reaction_remove(payload):
 @client.command()
 async def role(ctx, *args):
     
-    help_str = """
+    help_str = f"""
 __**ROLE**__
 
-Commande qui permet de générer un message de reaction role (les membres peuvent s'auto ajouter/enlever des rôles avec les réactions sous le message).
+⚠️Cette commande n'est utilisable que par {client.get_user(OWNER_ID)} ⚠️
+
+!Role permet de générer un message de reaction role (les membres peuvent s'auto ajouter/enlever des rôles avec les réactions sous le message).
 Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role comme argument.
 
 **UTILISATION**
-    !role <option1> <option2> ... <emote1> <role1> <emote2> <role2> ...
+    `!role <option1> <option2> ... <emote1> <role1> <emote2> <role2> ...`
 
 **OPTIONS**
-    -h --help : manuel
-    -m --message 'str' : Personnalise le message envoyé par le bot. Le message doit être entouré de quote < ' >
-    -u --unique : Les membres peuvent avoir uniquement 1 rôle de la liste
+    `-h  | --help` : manuel
+    `-m  | --message 'str'` : Personnalise le message envoyé par le bot. Le message doit être entouré de quote < ' >
+    `-nr | --no-remove` : Les membres ne peuvent pas s'enlever le rôle en enlevant la réaction
+    `-u  | --unique` : Les membres peuvent avoir uniquement 1 rôle de la liste
     """
     # Check des permissions
     if ctx.message.author.id != OWNER_ID:
-        await ctx.send("Désolé, vous n'êtes pas autorisé à utiliser cette commande")
+        await ctx.send(help_str)
         return
 
     # Default values
     message_str = "Réagissez avec le(s) emoji(s) suivant(s) pour avoir le(s) rôle(s) correspondant : "  # Default message
     UF = 0                                                                                              # Unique Flag
+    RF = 1                                                                                              # Remove Flag
 
     start = 0
 
+    # OPTIONS
     while args[start].startswith("-"):
         match args[start]:
+            # HELP
             case "-h" |"--help":
                 await ctx.send(help_str)
                 return
 
-            case "-u" | "--unique": 
-                UF = 1
-
-            case "-m" |"--message":
+            # MESSAGE
+            case "-m" | "--message":
                 try :
                     if args[start+1].startswith('"') or args[start+1].startswith("'"):
                         start += 1
@@ -145,18 +162,26 @@ Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role
                         await ctx.send("ERREUR : il manque sûrement un début de quote ( ' ) pour l'option -m")
                         return
                 except IndexError: await ctx.send("ERREUR : il manque sûrement une fin de quote ( ' ) pour l'option -m")
+            
+            # NO-REMOVE
+            case "-nr" | "--no-remove":
+                RF = 0
+
+            # UNIQUE
+            case "-u" | "--unique": 
+                UF = 1
                 
             case _ : print("Unknown")
         start += 1
 
-    # Analyse les arguments
+    # Envoie le message
     message = await ctx.send(message_str)
 
     # Stock l'id du message envoyé 
     new_dict = {}
     new_dict |= {"id" : message.id}
     new_dict |= {"UF" : UF}
-    list_id_messages_reaction_role.append(message.id)
+    new_dict |= {"RF" : RF}
     
 
     # Ajoute chaque paire réaction-rôle
@@ -187,6 +212,7 @@ Peut avoir 1 à n (limite maximale inconnue pour le moment) paire réaction-role
         new_dict |= {str(unicodedata.normalize('NFKD', emoji).encode('ascii', 'ignore')):role_name}
     
     # Mise à jour du json
+    list_id_messages_reaction_role.append(message.id)
     list_messages_reaction_role.append(new_dict)
     with open('message_role.json', 'w') as f:
         json.dump(list_messages_reaction_role, f)
