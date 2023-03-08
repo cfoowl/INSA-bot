@@ -5,9 +5,6 @@ from dotenv import load_dotenv
 from cogs.Role import Reaction_role
 from cogs.Ping import Ping
 
-"""
-TO DO
-- """
 
 # Initialisation
 intents = discord.Intents.default()
