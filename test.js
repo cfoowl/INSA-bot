@@ -7,66 +7,73 @@ function sleep(ms){
 
 
 (async () => {
-    const browser = await puppeteer.launch({headless:false});
+
+    //Lance et set up le navigateur
+    const browser = await puppeteer.launch({headless:true});
     const page = await browser.newPage();
     await page.setViewport({width:1366, height: 768});
 
-    await page.goto('https://cas.insa-cvl.fr/cas/login?service=https:%2F%2Fedt.insa-cvl.fr%2Fetudiant');
+    //Page de connection à insa cvl hyperplanning
+    await page.goto('https://cas.insa-cvl.fr/cas/login?service=https:%2F%2Fedt.insa-cvl.fr%2Fetudiant', {
+        waitUntil: "domcontentloaded"
+      });
 
-    await sleep(500);
-
+    //Connection à hyperplanning
     await page.type('#username', id.login);
     await page.type('#password', id.mdp);
     await page.click('button[name="submitBtn"]');
+    await page.waitForNavigation({waitUntil: 'networkidle2'});
 
-    await sleep(2000);
+
+    //Clique sur le bouton résultat
     await page.click('li.item-menu_niveau0:nth-child(2)');
-
     await sleep(500);
 
+    //Clique sur le menu déroulant des semestres
     await page.click('.ocb_bouton');
-
     await sleep(500);
 
+    //Clique sur le premier semestre
     await page.click('.deroulant-conteneur-show-hide');
-
     await sleep(500);
 
+    //Clique sur "par ordre chronologique"
     await page.click('label.iecb:nth-child(2) > span:nth-child(2)');
-
     await sleep(500);
 
-    const arias = await page.evaluate(() => Array.from(
+    //Récupère toutes les notes du semestre
+    const notes = await page.evaluate(() => Array.from(
         document.querySelectorAll(".Espace"), 
         e => e.getAttribute("aria-label")
       ));
-    
-    arias.shift();
-    test = [];
+    notes.shift();
+    //console.log(notes);
 
-    for (let i in arias) {
+    
+    //Parse le nom des matières
+    nom_matieres = [];
+    for (let i of notes) {
         var k = "";
-        for(let j in arias[i]) {
-            if (!"0123456789".includes(arias[i][j])) {
-                k+=arias[i][j];
+        for(let j of i) {
+            if (!"0123456789".includes(j)) {
+                k+=j;
             } else {
                 break;
             }
         }
-        test.push(k);
+        k = k.trim();
+        nom_matieres.push(k);
     }
-    json = JSON.stringify(test);
 
+    //Ecrit la liste des matières dans un json
+    json = JSON.stringify(nom_matieres);
     var fs = require("fs")
-    fs.writeFile("./notes.json", json, err=>{
+    fs.writeFile("./data/notes.json", json, err=>{
         if(err){
           console.log("Error writing file" ,err)
         } else {
-          console.log('JSON data is written to the file successfully')
+          //console.log('JSON data is written to the file successfully')
         }
        })
-
-    await sleep(5000);
-
     await browser.close();
 })();
