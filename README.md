@@ -3,10 +3,13 @@ Bot discord pour le serveur de la promo 2025 STI
 
 
 Dépendances :
+Python :
 pip install discord.py
 pip install python-dotenv
 pip install aiocron
-npm i puppeteer
+
+JS :
+puppeteer
 
 
 Dans le dossier data :

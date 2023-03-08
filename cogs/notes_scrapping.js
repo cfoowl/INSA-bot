@@ -9,7 +9,7 @@ function sleep(ms){
 (async () => {
 
     //Lance et set up le navigateur
-    const browser = await puppeteer.launch({headless:true});
+    const browser = await puppeteer.launch({headless:true, executablePath: '/usr/bin/chromium-browser'});
     const page = await browser.newPage();
     await page.setViewport({width:1366, height: 768});
 
