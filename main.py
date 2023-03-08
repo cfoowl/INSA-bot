@@ -6,9 +6,6 @@ from cogs.Role import Reaction_role
 from cogs.Ping import Ping
 from cogs.Notes import Notes
 
-"""
-TO DO
-- """
 
 # Initialisation
 intents = discord.Intents.default()
