@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from cogs.Role import Reaction_role
 from cogs.Ping import Ping
 from cogs.Notes import Notes
+from cogs.help import HelpCog
 
 
 # Initialisation
@@ -27,6 +28,7 @@ async def setup(bot):
     await bot.add_cog(Reaction_role(bot,OWNER_ID))
     await bot.add_cog(Ping(bot))
     await bot.add_cog(Notes(bot))
+    await bot.add_cog(HelpCog(bot))
 
 # setup(bot)
 load_dotenv(dotenv_path="data/config")
