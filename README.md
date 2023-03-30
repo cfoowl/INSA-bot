@@ -1,4 +1,10 @@
 
+# INSA bot
+
+Bot discord pour le serveur de la promo 2025 STI
+
+
+
 ## Auto-héberger le bot
 
 - Cloner le projet
@@ -41,5 +47,21 @@ Lancer le bot
 
 ```bash
   python main.py
+```
+
+
+## Dépendances
+
+Dépendances utilisées.
+
+Python :
+
+```bash
+  pip install discord.py
+  pip install python-dotenv
+```
+JS :
+```bash
+  npm i puppeteer
 ```
 
