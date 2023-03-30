@@ -32,6 +32,7 @@ class Notes(commands.Cog):
         if now > today8am or now < today0am:
             #import json
             notes_before = json_import(self.database)
+            date_now = now.strftime("%d/%m/%Y %H:%M:%S")
 
             #run test.js
             os.system("node cogs/notes_scrapping.js")
@@ -40,7 +41,14 @@ class Notes(commands.Cog):
             notes_after = json_import(self.database)
 
             if len(notes_before) == len(notes_after):
-                print("Pas de nouvelles notes !")
+                #formated date now
+                
+                print(f"{date_now}Pas de nouvelles notes !")
+            elif len(notes_before) > len(notes_after):
+                #rewrite json
+                with open(self.database, 'w') as outfile:
+                    json.dump(notes_before, outfile)
+                print(f"{date_now}Une note a été supprimée !")
             else:
                 #find new note
                 for i in range(len(notes_after)):
