@@ -38,32 +38,21 @@ function sleep(ms){
     //await sleep(500);
 
     //Clique sur "par ordre chronologique"
-    await page.click('label.iecb:nth-child(2) > span:nth-child(2)');
+    await page.click('label.iecb.iecbrbgauche.m-left.as-chips');
     await sleep(500);
 
     //Récupère toutes les notes du semestre
-    const notes = await page.evaluate(() => Array.from(
-        document.querySelectorAll(".Espace"), 
-        e => e.getAttribute("aria-label")
-      ));
-    notes.shift();
-    //console.log(notes);
+    const nom_matieres = await page.$$eval('div.zone-principale', (divs) => {
+      const results = [];
 
-    
-    //Parse le nom des matières
-    nom_matieres = [];
-    for (let i of notes) {
-        let k = "";
-        for(let j of i) {
-            if (!"0123456789".includes(j)) {
-                k+=j;
-            } else {
-                break;
-            }
-        }
-        k = k.trim();
-        nom_matieres.push(k);
-    }
+      divs.forEach((div) => {
+        const content = div.querySelector('div.ie-ellipsis').textContent;
+        results.push(content);
+      });
+    return results;
+    });
+
+    //console.log(nom_matieres);
 
     //Ecrit la liste des matières dans un json
     json = JSON.stringify(nom_matieres);
